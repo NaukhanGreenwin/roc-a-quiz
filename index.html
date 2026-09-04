@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0e1116">
+<title>ROC-A Practice Quiz</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:#0e1116;color:#e8ecf1;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:0 0 96px}
+.wrap{max-width:640px;margin:0 auto;padding:14px}
+header{position:sticky;top:0;z-index:10;background:#0e1116;border-bottom:1px solid #212833;padding:10px 14px calc(10px + env(safe-area-inset-top,0px));padding-top:calc(10px + env(safe-area-inset-top,0px))}
+.hrow{max-width:640px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.count{font-size:14px;color:#9aa7b6;font-variant-numeric:tabular-nums}
+.score{font-size:14px;color:#9aa7b6;font-variant-numeric:tabular-nums}
+.bar{max-width:640px;margin:8px auto 0;height:4px;background:#212833;border-radius:99px;overflow:hidden}
+.bar>i{display:block;height:100%;background:#4a8fe7;width:0;transition:width .25s}
+h1{font-size:21px;line-height:1.35;margin:8px 0 18px;font-weight:600}
+.opt{display:block;width:100%;text-align:left;background:#161b22;color:#e8ecf1;border:1px solid #2a323d;border-radius:12px;padding:15px 16px;margin:0 0 10px;font:inherit;min-height:56px;cursor:pointer}
+.opt:active{background:#1d2430}
+.opt .lt{display:inline-block;width:22px;color:#8b98a8;font-weight:600}
+.opt.right{background:#123524;border-color:#2f9c5f;color:#d8f5e4}
+.opt.right .lt{color:#5fd39a}
+.opt.wrong{background:#3a1519;border-color:#c0453f;color:#fadcda}
+.opt.wrong .lt{color:#f08b85}
+.opt.dim{opacity:.5}
+.opt[disabled]{cursor:default}
+.verdict{margin:16px 0 0;font-size:18px;font-weight:600}
+.verdict.ok{color:#5fd39a}
+.verdict.no{color:#f08b85}
+.panel{margin:12px 0 0;background:#141a22;border:1px solid #232c38;border-left:3px solid #4a8fe7;border-radius:10px;padding:14px 15px}
+.panel p{margin:0 0 10px}
+.panel p:last-child{margin-bottom:0}
+.panel .lbl{color:#8b98a8;font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin:0 0 4px}
+.panel .badwhy{color:#f0aca8}
+.ref{display:inline-block;margin-top:4px;font-size:13px;color:#8b98a8;background:#1b222c;border-radius:6px;padding:3px 9px}
+.footbar{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(180deg,rgba(14,17,22,0) 0%,#0e1116 34%);padding:18px 14px calc(14px + env(safe-area-inset-bottom,0px))}
+.footbar .inner{max-width:640px;margin:0 auto}
+.btn{display:block;width:100%;background:#4a8fe7;color:#06111f;border:0;border-radius:12px;padding:16px;font:600 17px/1 inherit;min-height:54px;cursor:pointer}
+.btn:active{background:#3f7fd0}
+.btn.ghost{background:#1b222c;color:#cfd8e3;border:1px solid #2a323d;margin-top:10px}
+.hide{display:none!important}
+.res h2{font-size:26px;margin:6px 0 2px}
+.res .big{font-size:52px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.res .pass{color:#5fd39a}
+.res .fail{color:#f0aca8}
+.res .sub{color:#9aa7b6;margin:6px 0 20px}
+.miss{background:#161b22;border:1px solid #2a323d;border-radius:12px;padding:13px 14px;margin:0 0 10px}
+.miss .qt{font-size:15px;margin:0 0 8px}
+.miss .yp{font-size:13px;color:#f0aca8;margin:0 0 2px}
+.miss .cp{font-size:13px;color:#5fd39a;margin:0 0 10px}
+.rev{background:#1b222c;color:#cfd8e3;border:1px solid #2a323d;border-radius:9px;padding:9px 14px;font:14px/1 inherit;min-height:38px;cursor:pointer}
+.note{color:#8b98a8;font-size:13px;margin:18px 0 0}
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow"><div class="count" id="count">1 of 50</div><div class="score" id="score">0 correct</div></div>
+  <div class="bar"><i id="prog"></i></div>
+</header>
+<div class="wrap">
+  <div id="quiz">
+    <h1 id="qtext"></h1>
+    <div id="opts"></div>
+    <div id="fb"></div>
+  </div>
+  <div id="results" class="res hide"></div>
+</div>
+<div class="footbar hide" id="foot"><div class="inner"><button class="btn" id="next">Next</button></div></div>
+<script>
+const QUESTIONS = [
+{id:1,q:"A Restricted Operator Certificate is valid for",
+ options:["One year","Five years","Ten years","Life"],answer:3,
+ short_why:"Issued for life, no revalidation.",
+ wrong_why:["There is no annual renewal. You never renew an ROC.","Five years is the pattern for some pilot medicals, not for this certificate.","Ten years is a passport, not a radio certificate.",""],
+ full_explanation:"RIC-21 opens by saying Restricted Operator Certificates are issued for life and no revalidation is required.\nYou pass once and it is yours forever.\nThe only reason to contact ISED again is if you lose it and need a replacement.\nDo not confuse the certificate (yours, for life) with the radio station licence (Appendix D, fees due 1 April each year).",
+ ric21_ref:"RIC-21 s. 1"},
+{id:2,q:"ROC-A examinations are conducted by",
+ options:["Transport Canada inspectors","Examiners accredited by Industry Canada","NAV CANADA flight service specialists","Any licensed pilot"],answer:1,
+ short_why:"Accredited examiners, typically people working in aviation.",
+ wrong_why:["Transport Canada handles aircraft and pilot licensing. Radio is Industry Canada, now ISED.","","NAV CANADA runs the towers and flight service stations. It does not examine radio operators.","Holding a pilot licence does not make you an accredited examiner."],
+ full_explanation:"Two different departments, and the exam mixes them up on purpose.\nIndustry Canada (ISED) owns radio: the ROC-A, the station licence, the Radiocommunication Act.\nTransport Canada owns the aircraft: registration, markings, call sign, pilot licence.\nExaminations for the ROC-A are run by examiners accredited by Industry Canada, usually people already working in the aviation industry.",
+ ric21_ref:"RIC-21 s. 3.1"},
+{id:3,q:"The maximum power output of equipment an ROC-A holder may operate is",
+ options:["25 watts","100 watts","250 watts e.r.p.","1,000 watts"],answer:2,
+ short_why:"250 watts effective radiated power, equal to 400 watts PEP.",
+ wrong_why:["Too low. 25 watts is a typical handheld or small VHF set, not the limit in the rule.","Too low. There is no 100 watt figure anywhere in RIC-21.","","Far too high. That would be a commercial installation needing a higher certificate."],
+ full_explanation:"An ROC-A covers simple radio gear, not complex installations.\nThe limit is 250 watts effective radiated power, which RIC-21 says is equivalent to 400 watts peak envelope power.\nThe equipment must also need only simple external switching and have all frequency-determining elements preset inside the transceiver.\nIn plain terms: a normal aircraft radio you switch on and dial a frequency into. Nothing you have to tune or adjust internally.\nMemorise the pair: 250 watts e.r.p. equals 400 watts PEP.",
+ ric21_ref:"RIC-21 s. 2"},
+{id:4,q:"The highest priority of communication in the aeronautical service is",
+ options:["Flight safety","Urgency","Distress","Meteorological"],answer:2,
+ short_why:"Distress is number one on the list of ten.",
+ wrong_why:["Flight safety is fourth. Important, but three things beat it.","Urgency is second. PAN PAN yields to MAYDAY.","","Meteorological is fifth. Weather never outranks an emergency."],
+ full_explanation:"RIC-21 lists ten priorities in order. Learn the top six and you have the marks:\n1 Distress\n2 Urgency\n3 Radio direction-finding\n4 Flight safety\n5 Meteorological\n6 Flight regularity\nThen: United Nations Charter messages, government messages where priority was expressly requested, service communications, and everything else.\nThe logic is a ladder of danger. Life at risk first, then safety concerns, then finding people, then flying safely, then weather, then keeping the schedule.",
+ ric21_ref:"RIC-21 s. 4.1"},
+{id:5,q:"Second in the order of priority is",
+ options:["Urgency","Direction-finding","Flight regularity","Government messages"],answer:0,
+ short_why:"Urgency sits directly under distress.",
+ wrong_why:["","Direction-finding is third, one step below urgency.","Flight regularity is sixth, near the bottom of the safety group.","Government messages are eighth, and only when priority was expressly requested."],
+ full_explanation:"Distress first, urgency second. That is the whole answer.\nDistress means grave and imminent danger needing immediate help: MAYDAY.\nUrgency means something concerning the safety of an aircraft, vehicle or person, but no immediate assistance needed: PAN PAN.\nEverything else, including direction-finding, flight safety and weather, sits below both.",
+ ric21_ref:"RIC-21 s. 4.1"},
+{id:6,q:"The band 121.9825 to 123.5875 MHz is used for",
+ options:["Air traffic control services","General aviation communications","Aeronautical radionavigation","Aeronautical operational control"],answer:1,
+ short_why:"That block is general aviation communications.",
+ wrong_why:["ATC has three blocks: 117.9750 to 121.9625, 123.5875 to 128.8125, and 132.0125 to 136.0000.","","Radionavigation is the bottom of the band, 108.1000 to 117.9750 MHz.","Aeronautical operational control is 128.8125 to 132.0125 MHz, company traffic about flight regularity."],
+ full_explanation:"Appendix E splits the VHF air band into seven blocks. Read it as a stack from the bottom up:\n108.1000 to 117.9750 MHz, radionavigation (the two lowest blocks together)\n117.9750 to 121.9625 MHz, air traffic control\n121.9825 to 123.5875 MHz, general aviation\n123.5875 to 128.8125 MHz, air traffic control\n128.8125 to 132.0125 MHz, aeronautical operational control\n132.0125 to 136.0000 MHz, air traffic control\nThe general aviation block is the only non-ATC block in the middle, and 121.5 MHz, the emergency frequency, sits just below it inside the ATC block.",
+ ric21_ref:"RIC-21 Appendix E"},
+{id:7,q:"Privacy of communications does not apply to",
+ options:["Company dispatch messages","Messages addressed to ALL STATIONS","Clearance delivery","Any message you did not understand"],answer:1,
+ short_why:"ALL STATIONS traffic is meant for everyone, so it is not private.",
+ wrong_why:["Company dispatch is ordinary private traffic. You may not repeat it.","","A clearance is between ATC and one aircraft. Private.","Not understanding a message changes nothing. It is still private."],
+ full_explanation:"The default is that everything you hear on the radio is private and you may not repeat it, or even say that it existed. That is subsection 9(2) of the Radiocommunication Act.\nThe exceptions are the messages meant for everybody: distress, urgency, safety, and anything addressed to ALL STATIONS such as weather reports and storm warnings.\nYou may also pass a communication on to the addressee or their agent, to authorised Government of Canada officials, to officers of the court, or to a telecom operator who needs it to deliver the message.\nBreaking privacy costs an individual up to $25,000 or a year in jail, or both. A company, up to $75,000.",
+ ric21_ref:"RIC-21 s. 4.2"},
+{id:8,q:"An individual who divulges an intercepted communication is liable to a fine of up to",
+ options:["$1,000","$5,000","$25,000","$75,000"],answer:2,
+ short_why:"$25,000 for an individual. $75,000 is the corporate figure.",
+ wrong_why:["No $1,000 fine appears anywhere in RIC-21.","$5,000 is the smaller fine: profanity, interference, false distress, unlicensed station.","","$75,000 is the corporate fine for the same offence, not the individual one."],
+ full_explanation:"There are only two individual fine amounts in the whole guide. Learn them as a pair.\nThe big one, $25,000: breaking the privacy of communications. Corporation, $75,000.\nThe small one, $5,000: superfluous or obscene communication, interfering with another station, sending a false distress signal, or running a station without authorisation. Corporation, $25,000.\nEvery one of them also carries up to one year in jail, or both fine and jail.\nTrap to watch: $25,000 is the individual fine for privacy and the corporate fine for everything else.",
+ ric21_ref:"RIC-21 s. 4.2"},
+{id:9,q:"In communications between two aircraft, control rests with",
+ options:["The aircraft calling","The aircraft being called","The nearest ground station","The aircraft at higher altitude"],answer:1,
+ short_why:"Air to air, the station being called is the controlling station.",
+ wrong_why:["The caller proposes. It does not control.","","No ground station is involved in an air-to-air exchange.","Altitude has nothing to do with radio control."],
+ full_explanation:"Think of it as who picked up the phone.\nBetween two aircraft, the aircraft being called controls the conversation.\nThe caller announces the working frequency. If the called aircraft agrees, it says it will listen there. If it does not agree, it names the frequency to use instead, and that is the one you use.\nThis is the opposite habit from ground work, where the ground station has control. Both are in the same section, so the exam likes to put them side by side.",
+ ric21_ref:"RIC-21 s. 4.3"},
+{id:10,q:"Between a ground station and an aircraft, control normally rests with",
+ options:["The aircraft","The ground station","Whoever called first","The pilot in command"],answer:1,
+ short_why:"The ground station normally retains communications control.",
+ wrong_why:["The aircraft complies with the ground station, not the other way round.","","Who called first is irrelevant. This is the air-to-air rule creeping in.","The pilot controls the aircraft station itself. Not the exchange with the ground."],
+ full_explanation:"In communications between an aeronautical ground station and an aircraft station, the aircraft complies with the ground station on the order and time of transmission, the choice of frequency, and the duration and suspension of communications.\nSeparately, and this catches people, the operation of an aircraft station is under the control of the pilot or whoever is in charge of that station. That is about the radio in your aircraft, not about who runs the conversation.\nThe exception to all of it: distress and urgency, where control passes to the station that started the priority call.",
+ ric21_ref:"RIC-21 s. 4.3"},
+{id:11,q:"In distress or urgency communications, control lies with",
+ options:["The nearest area control centre","The station initiating the priority call","Search and rescue","The first station to acknowledge"],answer:1,
+ short_why:"Whoever started the emergency call is in charge.",
+ wrong_why:["A control centre may help, but it does not automatically take control.","","SAR is notified and coordinates the rescue. It does not own the frequency by default.","Acknowledging does not seize control, though control can be deliberately delegated or transferred."],
+ full_explanation:"Normal rules put the ground station in charge. Distress and urgency flip that.\nControl of distress traffic belongs to the aircraft in distress, or to the station relaying its message.\nThat station may delegate control to another station, typically an aeronautical station, because it has good links to air traffic control and to search and rescue.\nSo an aircraft in trouble outranks the tower it is talking to, until it hands control over.",
+ ric21_ref:"RIC-21 s. 4.3, s. 6.6"},
+{id:12,q:"An individual using profane language on the air is liable to a fine of up to",
+ options:["$500","$5,000","$25,000","$75,000"],answer:1,
+ short_why:"$5,000 for an individual, $25,000 for a corporation.",
+ wrong_why:["There is no $500 penalty in RIC-21.","","$25,000 is the individual fine for breaking privacy, and the corporate fine for this one.","$75,000 is only the corporate fine for breaking privacy."],
+ full_explanation:"Subsection 32(1) of the Radiocommunication Regulations bans superfluous communication and profane or obscene language outright.\nAeronautical radio traffic is restricted to safety and flight regularity. Chatter is an offence, not just bad manners.\nPenalty for an individual: up to $5,000, or up to one year in jail, or both. Corporation: up to $25,000.\nThe same $5,000 figure covers interfering with another station, sending a false distress signal, and operating without authorisation.",
+ ric21_ref:"RIC-21 s. 4.4"},
+{id:13,q:"You may interrupt another station's transmission only when",
+ options:["You have waited two minutes","The other station is a private aircraft","You have a higher priority call or message","You are on a different frequency"],answer:2,
+ short_why:"Only a higher priority call justifies breaking in.",
+ wrong_why:["No amount of waiting gives you the right to transmit over someone.","The type of aircraft is irrelevant. Every station has the same protection.","","If you are on a different frequency you are not interrupting anyone."],
+ full_explanation:"The Act says every radio station shall be operated so as not to interfere with or interrupt the working of another station.\nThe single exception is priority. A station with distress, urgency or safety communications may interrupt, at any time, a transmission of lower priority already in progress.\nOtherwise the rule before you key the mic is: listen long enough to be sure you will not cause harmful interference, and if interference seems likely, wait for the first break.\nInterfering carries the same penalty as profanity, up to $5,000 for an individual.",
+ ric21_ref:"RIC-21 s. 4.4, s. 5.7.1"},
+{id:14,q:"Knowingly sending a false distress signal is prohibited by",
+ options:["Paragraph 9(1)(a) of the Radiocommunication Act","Subsection 32(1) of the Regulations","The Aeronautics Act","Transport Canada policy only"],answer:0,
+ short_why:"Paragraph 9(1)(a) of the Act.",
+ wrong_why:["","Subsection 32(1) of the Regulations covers superfluous, profane and obscene communication, not false distress.","The Aeronautics Act is Transport Canada legislation. Radio offences live in the Radiocommunication Act.","It is a criminal offence under an Act of Parliament, not a policy."],
+ full_explanation:"Three legal references to keep straight:\nParagraph 9(1)(a) of the Radiocommunication Act, false or fraudulent distress signal, message, call or radiogram.\nSubsection 9(2) of the Act, privacy of communications.\nSubsection 32(1) of the Radiocommunication Regulations, superfluous communication and profane or obscene language.\nA false MAYDAY costs an individual up to $5,000, or up to a year in jail, or both. A corporation, up to $25,000.",
+ ric21_ref:"RIC-21 s. 4.5"},
+{id:15,q:"11:45 p.m. is transmitted as",
+ options:["1145","2345","1145 PM","0045"],answer:1,
+ short_why:"24 hour clock, four figures: 2345.",
+ wrong_why:["1145 is 11:45 in the morning. You must add twelve hours for p.m.","","AM and PM are never spoken. The 24 hour clock exists to remove them.","0045 is 12:45 a.m., the example immediately above this one in the guide."],
+ full_explanation:"Time is always four figures on the 24 hour clock: first two the hour past midnight, last two the minutes past the hour.\nThe worked examples in RIC-21:\n12:45 a.m. is 0045\n1:30 a.m. is 0130\n12:00 noon is 1200\n1:45 p.m. is 1345\n4:30 p.m. is 1630\n11:45 p.m. is 2345\n12:00 midnight is 2400 or 0000, both accepted.\nTime is normally referenced to Coordinated Universal Time, UTC, also called GMT or zulu, to avoid confusion between time zones. Local time may be used only when everything is happening in one time zone.",
+ ric21_ref:"RIC-21 s. 5.2"},
+{id:16,q:"In the action list for a station in distress, activating the ELT comes",
+ options:["Before the distress call","Immediately after the distress call","After the distress message, listening and exchanging traffic","Only when instructed by ATC"],answer:2,
+ short_why:"It is step five of five, the last action.",
+ wrong_why:["Talking comes first. The call is step one.","The distress message is step two, not the ELT.","","No instruction is needed. The person in command decides."],
+ full_explanation:"When the person in command has an aircraft in grave and imminent danger, RIC-21 gives five steps in order:\n1 Transmit the distress call.\n2 Transmit the distress message.\n3 Listen for acknowledgment of receipt.\n4 Exchange further distress traffic as applicable.\n5 Activate automatic emergency equipment, such as the emergency locator transmitter, if available and when appropriate.\nThe ELT is last because a voice on the radio gets help faster than a beacon. That one sentence is the only ELT rule in the whole guide.",
+ ric21_ref:"RIC-21 s. 6.10"},
+{id:17,q:"The phonetic word for the letter J is",
+ options:["Juliett","Jupiter","Jack","Japan"],answer:0,
+ short_why:"Juliett, pronounced JEW LEE ETT, with two t at the end.",
+ wrong_why:["","Jupiter is not in the ITU alphabet.","Jack is old military slang, not ITU.","Japan is not in the ITU alphabet."],
+ full_explanation:"The ITU phonetic alphabet exists so that isolated letters and difficult words survive a noisy radio. Call signs are always spelled with it.\nThe five spellings people get wrong:\nA is Alfa, not Alpha, with an f.\nJ is Juliett, with a double t.\nX is X-ray, hyphenated.\nQ is Quebec, said KEH BECK.\nV is Victor, said VIK TAH.\nSay the whole alphabet out loud A to Z until it is automatic, then spell a few licence plates.",
+ ric21_ref:"RIC-21 s. 5.3"},
+{id:18,q:"The digit 9 is pronounced",
+ options:["NINE","NIN-er","NEEN","NOVEM"],answer:1,
+ short_why:"NIN-er, so it cannot be mistaken for the German nein.",
+ wrong_why:["Plain NINE is exactly what the rule changes, because it can be heard as no.","","NEEN is not a form used anywhere.","NOVEM is the start of November, the letter N, not a digit."],
+ full_explanation:"Digits get their own pronunciations so they cannot be confused with each other or with ordinary words:\n0 ZE-RO\n1 WUN\n2 TOO\n3 TREE\n4 FOW-er\n5 FIFE\n6 SIX\n7 SEV-en\n8 AIT\n9 NIN-er\nAlso: decimal is DAY-SEE-MAL, hundred is HUN-dred, thousand is TOU-SAND.\nThe four that change most are 3 TREE, 5 FIFE, 9 NIN-er and 4 FOW-er. Count 0 to 9 out loud a few times and they stick.",
+ ric21_ref:"RIC-21 s. 5.3"},
+{id:19,q:"11,000 is transmitted as",
+ options:["Eleven thousand","One one zero zero zero","One one thousand","Eleven zero zero zero"],answer:2,
+ short_why:"Whole thousands: digits of the thousands, then the word thousand.",
+ wrong_why:["Eleven is never spoken. Digits are said separately.","This is the digit-by-digit rule, which applies to everything except whole thousands.","","Eleven is not a permitted form, and the trailing zeros are wrong for a whole thousand."],
+ full_explanation:"One rule with one exception.\nRule: pronounce every digit separately.\nException: whole thousands, where you say the digits of the number of thousands and then the word thousand.\nWorked examples from the guide:\n10 is one zero\n75 is seven five\n100 is one zero zero\n5,800 is five eight zero zero\n11,000 is one one thousand\n68,009 is six eight zero zero nine\nNotice 5,800 is not a whole thousand, so it goes digit by digit, while 11,000 is, so it uses the word thousand.",
+ ric21_ref:"RIC-21 s. 5.4"},
+{id:20,q:"121.5 is transmitted as",
+ options:["One twenty one point five","One two one decimal five","One two one five","Hundred twenty one and a half"],answer:1,
+ short_why:"Each digit separately, and the point is spoken as decimal.",
+ wrong_why:["Point is never said, and grouped numbers like twenty one are never used.","","Leaving out decimal makes it a different number entirely.","Fractions and words like half are never used on the air."],
+ full_explanation:"Frequencies go digit by digit, with the decimal point spoken as the word decimal, said DAY-SEE-MAL.\n121.5 becomes one two one decimal five.\n122.8 becomes one two two decimal eight.\n118.7 becomes one one eight decimal seven.\nMoney follows the same idea in the order it is written: $17.25 is dollars one seven decimal two five, and $0.75 is decimal seven five.\n121.5 MHz is also the aeronautical emergency frequency, so this is a number worth being able to say in your sleep.",
+ ric21_ref:"RIC-21 s. 5.4"},
+{id:21,q:"An altitude of 2,700 feet is transmitted as",
+ options:["Two seven zero zero","Twenty seven hundred","Two thousand seven hundred","Flight level two seven"],answer:2,
+ short_why:"Altitude above sea level is thousands plus hundreds.",
+ wrong_why:["Digit by digit is the general number rule, but altitude is a named exception.","Grouped speech like twenty seven hundred is used for cloud heights, not altitude.","","A flight level is a different thing, said as separate digits, and 2,700 feet is not one."],
+ full_explanation:"Numbers have special forms in aviation, and altitude is one of them.\nAltitude above sea level: thousands plus hundreds of feet. 2,700 is two thousand seven hundred.\nFlight levels: separate digits. FL265 is flight level two six five.\nAerodrome elevation: prefixed by field elevation. 150 is field elevation one five zero, and 3500 is field elevation three thousand five zero zero.\nCloud heights are grouped: 34BKN is thirty four hundred broken.\nWind is spelled out with units: 270/10 is wind two seven zero degrees one zero knots.",
+ ric21_ref:"RIC-21 s. 5.4"},
+{id:22,q:"FL265 is transmitted as",
+ options:["Flight level two six five","Flight level two sixty five","Two six five hundred","Twenty six thousand five hundred"],answer:0,
+ short_why:"Flight levels use separate digits.",
+ wrong_why:["","Sixty five groups two digits. Flight levels never group.","This is not a form used for flight levels.","Converting to feet is not what is being asked, and the number would be wrong anyway."],
+ full_explanation:"The guide draws a clean line: altitude above sea level is expressed in thousands plus hundreds of feet, but separate digits shall be used to express flight levels.\nSo 2,700 feet is two thousand seven hundred, and FL265 is flight level two six five.\nThe reason is that a flight level is a label from an altimeter setting, not a measured height, so it is read as three characters rather than as a quantity.\nA useful pair to memorise together, because the exam often puts them next to each other.",
+ ric21_ref:"RIC-21 s. 5.4"},
+{id:23,q:"In Southern Domestic Airspace headings are given in degrees",
+ options:["True","Magnetic","Grid","Relative"],answer:1,
+ short_why:"South is magnetic, north is true.",
+ wrong_why:["True degrees are used in Northern Domestic Airspace, not southern.","","Grid is not a term RIC-21 uses for headings.","Relative bearings are not what this rule covers."],
+ full_explanation:"Aircraft headings are given in groups of three digits, so 5 degrees is heading zero zero five and 350 degrees is heading three five zero. Always three figures.\nWhich north you refer them to depends on where you are:\nSouthern Domestic Airspace, which is most of populated Canada: degrees magnetic.\nNorthern Domestic Airspace, the far north: degrees true.\nThe reason is practical. Close to the magnetic pole a compass becomes unreliable, so the north charts and clearances switch to true.",
+ ric21_ref:"RIC-21 s. 5.4"},
+{id:24,q:"Which expression should not be used on the air",
+ options:["WILCO","OVER AND OUT","AFFIRM","STANDBY"],answer:1,
+ short_why:"OVER and OUT contradict each other, so the phrase is meaningless.",
+ wrong_why:["WILCO is a proper procedural word: instructions received, understood and will be complied with.","","AFFIRM is the correct word for yes.","STANDBY is correct: I must pause, please wait and I will call you."],
+ full_explanation:"OVER means my transmission is ended and I expect a response from you.\nOUT means the conversation is ended and no response is expected.\nSaying both at once asks for a reply and refuses one in the same breath, which is why it only exists in films and on CB radio.\nRIC-21 names the slang to avoid: OK, REPEAT, TEN-FOUR, OVER AND OUT, BREAKER BREAKER, COME IN PLEASE.\nUse the Appendix B list instead. AFFIRM for yes, NEGATIVE for no, SAY AGAIN not repeat, ROGER for received.",
+ ric21_ref:"RIC-21 s. 5.5, Appendix B"},
+{id:25,q:"Aircraft call signs and markings are assigned by",
+ options:["Industry Canada","NAV CANADA","Transport Canada","ICAO"],answer:2,
+ short_why:"Transport Canada assigns the aircraft markings and call sign.",
+ wrong_why:["Industry Canada, now ISED, issues your operator certificate and the station licence. Not the aircraft registration.","NAV CANADA provides air traffic services. It assigns nothing.","","ICAO sets international standards. It does not register individual Canadian aircraft."],
+ full_explanation:"A call sign identifies a station, and should be used at least when contact is first established and again when the exchange ends. Aeronautical call signs are always spoken phonetically.\nAn aircraft call sign can be the same as the aircraft markings, and both are assigned by Transport Canada.\nKeep the departments apart:\nTransport Canada: aircraft, registration, markings, call sign, pilot licence.\nIndustry Canada or ISED: operator certificate, radio station licence, the Radiocommunication Act.",
+ ric21_ref:"RIC-21 s. 5.6"},
+{id:26,q:"A Canadian private aircraft's call sign is",
+ options:["The full five letter registration","Manufacturer or type, plus the last four letters of the registration","The owner's surname plus two letters","The company name plus the flight number"],answer:1,
+ short_why:"Type or manufacturer, then the last four letters.",
+ wrong_why:["The leading C is dropped. Four letters, not five.","","Owner names are never used as call signs.","That is the air carrier format, not the private one."],
+ full_explanation:"Two civil formats, and the exam tests both.\nCanadian air carriers: the assigned company name, then the flight number or the last three characters of the registration. Example, AIR CANADA ONE FOUR NINE.\nCanadian private aircraft: the manufacturer name or aircraft type, then the last four letters of the registration. Example, CESSNA-182 GFAC, spoken CESSNA ONE EIGHT TWO GOLF FOXTROT ALFA CHARLIE.\nSo C-GFAC becomes GOLF FOXTROT ALFA CHARLIE. Four letters for private, three characters for a carrier.",
+ ric21_ref:"RIC-21 s. 5.6.2"},
+{id:27,q:"The station providing surface movement control at Toronto is called",
+ options:["Toronto Centre","Toronto Ground","Toronto Radio","Toronto Delivery"],answer:1,
+ short_why:"Surface movement control is Ground.",
+ wrong_why:["Centre is an area control centre, which handles enroute traffic.","","Radio is a private aeronautical station.","Delivery is clearance delivery, which issues your clearance before you move."],
+ full_explanation:"Ground station names are the place, then a word for the job. RIC-21 lists them:\nArea control centre, Ottawa Centre\nSurface movement control, Toronto Ground\nFlight information service station, Ottawa Information\nClearance delivery, Edmonton Delivery\nApproach control radar arrivals, Ottawa Arrival\nApproach control radar departures, Winnipeg Departure\nPrecision approach radar, Montreal Precision\nCommunity aerodrome radio station, Eskimo Tower\nPrivate aeronautical station, Radio\nCompany dispatch, Dispatch\nSurface movement means aircraft moving on the ground, so Ground is the one that handles taxiing.",
+ ric21_ref:"RIC-21 s. 5.6.3"},
+{id:28,q:"In a call, the first thing spoken is",
+ options:["Your own call sign","THIS IS","The call sign of the station being called","The frequency"],answer:2,
+ short_why:"Them first, always. The station called is named first.",
+ wrong_why:["Yours comes third, after THIS IS.","THIS IS is second, and only makes sense after you have named who you are calling.","","The frequency comes fourth, after both call signs."],
+ full_explanation:"RIC-21 puts it in capitals: the call sign identifier of the station being called is ALWAYS spoken first.\nThe five parts of a single station call, in order:\n1 The call sign of the station called, up to three times, once if conditions are good.\n2 The words THIS IS.\n3 Your own call sign, up to three times, once if conditions are good.\n4 The frequency you are transmitting on.\n5 The invitation to reply, OVER.\nExample:\nTORONTO TOWER\nTHIS IS\nCESSNA ONE EIGHT FIVE FOXTROT ALFA DELTA TANGO\nON FREQUENCY ONE ONE EIGHT DECIMAL SEVEN\nOVER\nThe reason is attention. Naming them first makes the right person start listening.",
+ ric21_ref:"RIC-21 s. 5.7.1"},
+{id:29,q:"When radio conditions are good, a call sign is spoken",
+ options:["Once","Twice","Three times","Until answered"],answer:0,
+ short_why:"Not more than three times, once if radio conditions are good.",
+ wrong_why:["","Twice is not a form the guide uses.","Three times is the maximum, for poor conditions, not the normal case.","Repeating until answered is exactly what the rule limits."],
+ full_explanation:"The rule reads: not more than three times, once if radio conditions are good. Three is a ceiling for bad conditions, not a habit.\nIt applies to both call signs in the call, theirs and yours.\nThings that are always three times, and these are the ones to memorise:\nMAYDAY in the distress call, and the call sign that follows it\nPAN PAN in the urgency signal\nALL STATIONS in a general call\nMAYDAY RELAY when relaying\nBoth call signs in an acknowledgment of a distress message\nEverything else: once when conditions are good.",
+ ric21_ref:"RIC-21 s. 5.7.1"},
+{id:30,q:"OUT means",
+ options:["I am leaving the frequency","My transmission is ended and I expect a response","Conversation is ended and no response is expected","I am switching off the radio"],answer:2,
+ short_why:"Finished, no reply expected.",
+ wrong_why:["Leaving the frequency is a separate piece of information you would state.","That is the definition of OVER, the opposite word.","","OUT says nothing about your equipment."],
+ full_explanation:"The pair that trips everyone:\nOVER, my transmission is ended and I expect a response from you.\nOUT, the conversation is ended and no response is expected.\nOne invites a reply, one closes the exchange. Which is why OVER AND OUT is nonsense.\nTo end a conversation, simply conclude the transmission with OUT:\nTORONTO TOWER\nTHIS IS\nPIPER FOXTROT X-RAY QUEBEC QUEBEC\nRECEIVED RUNWAY CLEARANCE\nOUT",
+ ric21_ref:"RIC-21 s. 5.7.2, Appendix B"},
+{id:31,q:"You hear a call but cannot identify the calling station. You say",
+ options:["Nothing until it is repeated","STATION CALLING, your call sign, SAY AGAIN, OVER","WHO IS CALLING","GO AHEAD"],answer:1,
+ short_why:"STATION CALLING, your identification, SAY AGAIN, OVER, replied immediately.",
+ wrong_why:["Waiting is the rule for a different case: when you are unsure the call was even meant for you.","","Not standard phraseology. Nothing like it appears in Appendix B.","GO AHEAD invites a message, which is wrong when you do not know who is speaking."],
+ full_explanation:"Two similar situations with opposite answers. Keep them apart.\nYou are not sure the call was for your station: do not reply until the call has been repeated and understood.\nYou know it was for you but cannot identify who called: reply immediately with the words STATION CALLING, your own identification, SAY AGAIN, OVER.\nExample:\nSTATION CALLING CESSNA FOXTROT NOVEMBER JULIETT INDIA\nSAY AGAIN\nOVER\nIn short: unsure it is for you, stay quiet. Sure it is for you but unsure who called, answer at once.",
+ ric21_ref:"RIC-21 s. 5.7.2"},
+{id:32,q:"After making an error you say CORRECTION followed by",
+ options:["The whole message again","The last correct word or phrase, then the corrected version","I SAY AGAIN","DISREGARD"],answer:1,
+ short_why:"Back up to the last correct word, then say it right.",
+ wrong_why:["Repeating everything wastes the frequency. Only the faulty part is redone.","","I SAY AGAIN means I repeat for clarity or emphasis. It does not fix an error.","DISREGARD means consider this transmission as not sent, which cancels rather than corrects."],
+ full_explanation:"When an error has been made, say CORRECTION, then the last correct word or phrase, then the corrected version.\nExamples from the guide:\nOVER OTTAWA AT TWO SEVEN CORRECTION TWO EIGHT\nPROCEED TO DOCK FOUR CORRECTION DOCK FIVE\nThe related words, which are easy to confuse:\nSAY AGAIN, requesting a repetition. Partial forms are SAY AGAIN ALL BEFORE a word, SAY AGAIN one word TO another word, SAY AGAIN ALL AFTER a word.\nI SAY AGAIN, I am repeating for clarity or emphasis.\nDISREGARD, consider this transmission as not sent.\nNever say the word REPEAT. It is on the banned slang list.",
+ ric21_ref:"RIC-21 s. 5.7.3, Appendix B"},
+{id:33,q:"Readability 3 on the scale means",
+ options:["Unreadable","Readable now and then","Readable but with difficulty","Perfectly readable"],answer:2,
+ short_why:"3 is fair, readable but with difficulty.",
+ wrong_why:["That is 1, bad.","That is 2, poor.","","That is 5, excellent."],
+ full_explanation:"The readability scale runs one to five:\n1 Bad, unreadable\n2 Poor, readable now and then\n3 Fair, readable but with difficulty\n4 Good, readable\n5 Excellent, perfectly readable\nUse it when you reply to a radio check, and expect it when you ask for one. The reply in the guide is READING YOU STRENGTH FIVE.\nMemory hook: the middle number is the middle answer, you can get it but you are working for it.",
+ ric21_ref:"RIC-21 s. 5.7.5"},
+{id:34,q:"A signal check should last no more than",
+ options:["5 seconds","10 seconds","30 seconds","One minute"],answer:1,
+ short_why:"Ten seconds, and on a frequency you will not disturb.",
+ wrong_why:["Five is too short to complete the standard phrase.","","Thirty seconds ties up the frequency far too long.","A minute would be superfluous communication."],
+ full_explanation:"To request a check: call another aircraft or ground station on any appropriate frequency that will not interfere with normal working, and ask.\nThe standard phrase is SIGNAL (or RADIO) CHECK 1, 2, 3, 4, 5. HOW DO YOU READ ME? OVER, and your call sign goes in the test transmission too.\nChecks should not last more than 10 seconds.\nThe name depends on when you do it:\nSignal check, airborne\nPreflight check, before departure\nMaintenance check, done by ground maintenance",
+ ric21_ref:"RIC-21 s. 5.7.5"},
+{id:35,q:"In a distress call the word MAYDAY is spoken",
+ options:["Once","Twice","Three times","Continuously"],answer:2,
+ short_why:"Three times to open the distress call.",
+ wrong_why:["Once is right for distress traffic after the call, and once at the start of the distress message. Not for the call itself.","Twice is not used anywhere in the guide.","","Repeating it endlessly is not the procedure and blocks the frequency."],
+ full_explanation:"How many times you say MAYDAY depends on where you are in the sequence:\nThe distress call: MAYDAY three times, THIS IS, then your call sign three times.\nThe distress message that follows: MAYDAY once, then your call sign once, then what happened.\nEvery later transmission in the distress traffic: MAYDAY once at the front, so any station just tuning in knows this is an emergency.\nThe call may be sent only on the authority of the person in command, it is not addressed to any one station, and nobody acknowledges it until the message has been sent.",
+ ric21_ref:"RIC-21 s. 6.7, s. 6.13"},
+{id:36,q:"If you cannot raise anyone on the frequency in use, repeat the distress call on",
+ options:["122.8 MHz","126.7 MHz","121.5 MHz","123.6 MHz"],answer:2,
+ short_why:"121.5 MHz, the aeronautical emergency frequency.",
+ wrong_why:["122.8 is a common general aviation frequency, not the emergency one.","126.7 is used for enroute flight information in Canada, not for emergencies.","","123.6 is a flight service frequency. The guide does use 123.6 in one example as a search and rescue frequency, but the emergency frequency is 121.5."],
+ full_explanation:"The order is: first on the air-ground frequency already in use, because someone is already listening there.\nIf you cannot establish communications there, repeat the distress call and message on the aeronautical emergency frequency, 121.5 MHz, or any other frequency available, to reach any ground station or other aircraft.\nThe same rule applies word for word to urgency, PAN PAN.\nAnd never forget the last part: any other frequency available. In distress you may use any means at your disposal to attract attention.",
+ ric21_ref:"RIC-21 s. 6.3, s. 7.3"},
+{id:37,q:"The acknowledgment of a distress message ends with the words",
+ options:["ROGER","RECEIVED MAYDAY","WILCO","MAYDAY OUT"],answer:1,
+ short_why:"RECEIVED MAYDAY closes the acknowledgment.",
+ wrong_why:["ROGER means I received your last transmission. It is ordinary traffic, not the distress form.","","WILCO means instructions received and will be complied with. Wrong context.","MAYDAY OUT is not a phrase in the guide."],
+ full_explanation:"The acknowledgment has five parts, in order:\n1 MAYDAY\n2 The call sign of the station in distress, three times\n3 THIS IS\n4 Your own call sign, three times\n5 RECEIVED MAYDAY\nExample:\nMAYDAY\nPIPER FOXTROT X-RAY QUEBEC QUEBEC (three times)\nTHIS IS\nWINNIPEG TOWER (three times)\nRECEIVED MAYDAY\nDo not confuse this with relaying. To relay a distress message you say MAYDAY RELAY three times, THIS IS, your call sign three times, MAYDAY once, then the particulars of the station in distress.\nIf the aircraft in distress is not near you, wait a little before acknowledging, so closer stations can answer first.",
+ ric21_ref:"RIC-21 s. 6.14, s. 6.16"},
+{id:38,q:"SEELONCE FEENEE means",
+ options:["Silence is imposed","The distress situation has ended","Urgency traffic follows","Change frequency"],answer:1,
+ short_why:"The distress is over and normal working may resume.",
+ wrong_why:["That is SEELONCE MAYDAY or SEELONCE DISTRESS. FEENEE is the opposite, the all clear.","","PAN PAN introduces urgency traffic, not this.","Nothing about SEELONCE refers to changing frequency."],
+ full_explanation:"Three phrases, all deliberately French sounding so they cut through any language:\nSEELONCE MAYDAY, silence imposed by the station in distress or the station controlling the distress traffic.\nSEELONCE DISTRESS, silence imposed by another station near the one in distress.\nSEELONCE FEENEE, from fini, the distress situation has ended and normal working may resume.\nThe cancellation format:\nMAYDAY once\nHELLO ALL STATIONS three times\nTHIS IS\nYour call sign\nThe filing time of the message\nThe call sign of the station that was in distress\nSEELONCE FEENEE\nOUT\nThat message is for other radio stations. Search and rescue must also be told separately by a normal call to the nearest aeronautical station explaining why the distress is cancelled.",
+ ric21_ref:"RIC-21 s. 6.17, s. 6.18"},
+{id:39,q:"After hearing PAN PAN a station must keep listening on that frequency for at least",
+ options:["One minute","Three minutes","Five minutes","Ten minutes"],answer:1,
+ short_why:"Three minutes, then normal working may resume.",
+ wrong_why:["One minute is too short. The rule is three.","","Five minutes is not a figure used in RIC-21.","Ten minutes is not a figure used in RIC-21."],
+ full_explanation:"On hearing the urgency signal, listen for at least three minutes on the frequency where you heard it.\nIf no urgency message follows in that time, an aeronautical ground station should if possible be told that you heard the urgency signal, and normal working may resume.\nWhile you wait, take care not to interfere with the urgency message that may follow.\nStations working on other frequencies may carry on as normal, provided the urgency message was not addressed to all stations.\nRemember the ranking: urgency has priority over everything except distress.",
+ ric21_ref:"RIC-21 s. 7.2"},
+{id:40,q:"WILCO means",
+ options:["I have received all of your last transmission","Yes","Instructions received, understood and will be complied with","Wait, I will call you"],answer:2,
+ short_why:"Understood, and I will do it.",
+ wrong_why:["That is ROGER. It confirms receipt only, it promises nothing.","That is AFFIRM.","","That is STANDBY."],
+ full_explanation:"The four short replies people mix up:\nROGER, I have received all of your last transmission. Receipt only.\nWILCO, your instructions are received, understood and will be complied with. Receipt plus a promise to act.\nAFFIRM, yes.\nNEGATIVE, no, or that is not correct, or I do not agree.\nSo ROGER for information, WILCO for an instruction you are going to follow.\nAnd never say ROGER WILCO together on the air, the same way you never say OVER AND OUT. WILCO already contains the receipt.",
+ ric21_ref:"RIC-21 Appendix B"},
+{id:41,q:"The phonetic word for the letter V, and how it is pronounced, is",
+ options:["Victor, VIK TAH","Victory, VIK TOR EE","Volt, VOLT","Viktor, VEEK TOR"],answer:0,
+ short_why:"Victor, said VIK TAH with the stress on VIK.",
+ wrong_why:["","Victory is not in the ITU alphabet.","Volt is not in the ITU alphabet.","The word is spelled Victor, and the ITU pronunciation is VIK TAH, not VEEK TOR."],
+ full_explanation:"The ITU alphabet fixes both the word and the way you say it, because the pronunciation is what survives a noisy channel.\nThe ones with pronunciations that surprise people:\nQ Quebec, KEH BECK\nV Victor, VIK TAH\nO Oscar, OSS CAH\nY Yankee, YANG KEY\nL Lima, LEE MAH\nK Kilo, KEY LOH\nZ Zulu, ZOO LOO\nU Uniform, YOU NEE FORM or OO NEE FORM\nC Charlie, CHAR LEE or SHAR LEE\nOnly two letters have an accepted alternative, C and U. Everything else has one pronunciation.",
+ ric21_ref:"RIC-21 s. 5.3"},
+{id:42,q:"The digit 3 is pronounced",
+ options:["THREE","TREE","THIR-ee","TREY"],answer:1,
+ short_why:"TREE, with the th dropped.",
+ wrong_why:["Plain THREE is what the rule replaces. The th sound is the first thing lost on a poor channel.","","THIR-ee is not a form used anywhere.","TREY is card table slang, not radio."],
+ full_explanation:"The th sound carries badly over radio, so 3 is said TREE.\nThe full set, worth saying out loud until it is automatic:\n0 ZE-RO\n1 WUN\n2 TOO\n3 TREE\n4 FOW-er\n5 FIFE\n6 SIX\n7 SEV-en\n8 AIT\n9 NIN-er\nAnd the three connectors: decimal is DAY-SEE-MAL, hundred is HUN-dred, thousand is TOU-SAND.\nEvery change exists to separate digits that could otherwise be confused: FIFE from fire, NIN-er from nein, TREE from free.",
+ ric21_ref:"RIC-21 s. 5.3"},
+{id:43,q:"Third in the order of priority in the aeronautical service is",
+ options:["Flight safety messages","Meteorological messages","Communications relating to radio direction-finding","Government messages"],answer:2,
+ short_why:"Direction-finding sits third, above flight safety.",
+ wrong_why:["Flight safety is fourth, one place below.","Meteorological is fifth.","","Government messages are eighth, and only where priority was expressly requested."],
+ full_explanation:"The full list of ten, in order:\n1 Distress communications\n2 Urgency communications\n3 Communications relating to radio direction-finding\n4 Flight safety messages\n5 Meteorological messages\n6 Flight regularity messages\n7 Messages relating to the application of the United Nations Charter\n8 Government messages for which priority has been expressly requested\n9 Service communications about the working of the telecommunication service or about communications previously exchanged\n10 All other aeronautical communications\nDirection-finding is third because it is how a lost or silent aircraft gets found, which is a direct continuation of the two emergency categories above it.",
+ ric21_ref:"RIC-21 s. 4.1"},
+{id:44,q:"The band 132.0125 to 136.0000 MHz is used for",
+ options:["Air traffic control services","General aviation communications","Aeronautical operational control communications","Aeronautical radionavigation"],answer:0,
+ short_why:"The top block of the air band is air traffic control.",
+ wrong_why:["","General aviation is the single block 121.9825 to 123.5875 MHz.","Aeronautical operational control is 128.8125 to 132.0125 MHz, the block immediately below this one.","Radionavigation is the bottom of the band, 108.1000 to 117.9750 MHz."],
+ full_explanation:"Appendix E, read bottom to top:\n108.1000 to 111.9750, radionavigation\n111.9750 to 117.9750, radionavigation\n117.9750 to 121.9625, air traffic control\n121.9825 to 123.5875, general aviation\n123.5875 to 128.8125, air traffic control\n128.8125 to 132.0125, aeronautical operational control\n132.0125 to 136.0000, air traffic control\nThe shape to remember: navigation at the bottom, then ATC dominating the rest with two small carve-outs, general aviation and operational control.\nAeronautical operational control communications, defined in Appendix A, are communications related to the regularity of flight, which is company traffic such as fuel and scheduling.",
+ ric21_ref:"RIC-21 Appendix E"},
+{id:45,q:"The urgency signal PAN PAN is spoken",
+ options:["Once","Twice","Three times","Once, then repeated every minute"],answer:2,
+ short_why:"PAN PAN, PAN PAN, PAN PAN at the start of the first urgency communication.",
+ wrong_why:["Once is not the form for the signal itself.","Twice is not used.","","There is no fixed repetition interval for the urgency signal."],
+ full_explanation:"PAN PAN is the international radiotelephony urgency signal, preferably spoken three times, at the beginning of the first urgency communication.\nIt means the safety of an aircraft, ship, vehicle or a person on board or within sight is concerned, but immediate assistance is not required.\nIt may be sent only on the authority of the person in charge of the station.\nIt may be addressed to all stations or to one specific station.\nCompare with distress: MAYDAY three times in the distress call, and MAYDAY once at the start of the distress message and every later distress transmission.",
+ ric21_ref:"RIC-21 s. 7.1, Appendix B"},
+{id:46,q:"In an urgency message, what comes immediately after PAN PAN spoken three times",
+ options:["The nature of the urgency condition","The name of the station addressed, or ALL STATIONS, three times","The words THIS IS","Your present position and altitude"],answer:1,
+ short_why:"Who you are calling comes next, three times.",
+ wrong_why:["The nature of the condition is element five, after you have identified yourself.","","THIS IS is element three, after you have named who you are addressing.","Position, flight level and heading come seventh, near the end."],
+ full_explanation:"The urgency message elements, in order:\n1 PAN PAN, three times\n2 The name of the station addressed, or ALL STATIONS, three times\n3 THIS IS\n4 The identification of the aircraft\n5 The nature of the urgency condition\n6 The intentions of the person in command\n7 Present position, flight level or altitude, and heading\n8 Any other useful information\nExample:\nPAN PAN, PAN PAN, PAN PAN\nALL STATIONS, ALL STATIONS, ALL STATIONS\nTHIS IS\nCESSNA FOXTROT NOVEMBER JULIETT INDIA\nLOST, REQUEST RADAR CHECK\nPOSITION: UNKNOWN\nAIRSPEED: 112 KNOTS\nALTITUDE: 1050 FEET\nCESSNA FOXTROT NOVEMBER JULIETT INDIA\nOVER\nNote the difference from distress: a distress call is never addressed to a particular station, while an urgency message names one or says ALL STATIONS.\nCancel an urgency message, addressed to ALL STATIONS, as soon as you know the action is no longer needed.",
+ ric21_ref:"RIC-21 s. 7.4, s. 7.5"},
+{id:47,q:"A radio check made before departure is called a",
+ options:["Signal check","Preflight check","Maintenance check","Ground check"],answer:1,
+ short_why:"Before departure it is a preflight check.",
+ wrong_why:["A signal check is the name used when the test is made while airborne.","","A maintenance check is one made by ground maintenance.","Ground check is not a term used in RIC-21."],
+ full_explanation:"Same procedure, three names depending on who is doing it and when:\nSignal check, made while the aircraft is airborne.\nPreflight check, made prior to departure.\nMaintenance check, made by ground maintenance.\nThe words on the air are the same either way: SIGNAL (or RADIO) CHECK 1, 2, 3, 4, 5. HOW DO YOU READ ME? OVER, with your call sign, on a frequency that will not interfere, and lasting no more than 10 seconds.\nThe reply uses the readability scale, 1 bad to 5 excellent.",
+ ric21_ref:"RIC-21 s. 5.7.5"},
+{id:48,q:"Noon Eastern Standard Time on the 16th of the month is transmitted as",
+ options:["1200 EST 16","161200 E","121600 E","16 1200 EASTERN"],answer:1,
+ short_why:"Six figures: day of the month, then the four figure time.",
+ wrong_why:["The date leads, not the time, and the zone is a single letter.","","This reverses the pair. The first two figures are the day, not the hour.","Time zones are given as one letter, and the group is not split up."],
+ full_explanation:"Two formats.\nTime alone: four figures. 12:45 a.m. is 0045, noon is 1200, 11:45 p.m. is 2345.\nDate and time together: six figures. First two figures are the day of the month, the next four are the time.\nWorked examples from the guide:\nNoon EST on the 16th is 161200 E\n2:45 a.m. PST on the 24th is 240245 P\nTime is normally referenced to Coordinated Universal Time, UTC, also called Greenwich Mean Time or zulu time, to avoid confusion between time zones. Local time may be used when operations are conducted entirely within one time zone.\nSpoken, 0920Z is zero niner two zero zulu.",
+ ric21_ref:"RIC-21 s. 5.2, s. 5.4"},
+{id:49,q:"Who may take the ROC-A examination",
+ options:["Canadian citizens aged 18 or over","Anyone. There are no nationality or age restrictions","Licensed pilots only","Permanent residents aged 16 or over"],answer:1,
+ short_why:"No age limit, no nationality limit.",
+ wrong_why:["There is no age limit and no citizenship requirement.","","You do not need a pilot licence to hold an ROC-A.","There is no residency requirement and no minimum age."],
+ full_explanation:"Eligibility is deliberately open. There are no nationality or age restrictions on who may take the examination or hold an ROC-A.\nWhat is required instead:\nCandidates must attest that they do not have a disability that would impair their ability to operate a radio station safely.\nIdentification must be presented at the examination. A valid passport, driver's licence, birth certificate, baptismal certificate, citizenship certificate or landed immigrant identification card are all accepted, at the examiner's discretion.\nThe examination may consist of written, practical and oral exercises, and the examiner must be satisfied that you can operate the equipment, that you know the operating procedures and the international regulations for the aeronautical service, especially those about safety of life, and that you have a general knowledge of the Radiocommunication Act and its regulations.",
+ ric21_ref:"RIC-21 s. 3.1, s. 3.2, s. 3.3"},
+{id:50,q:"READ BACK means",
+ options:["Repeat all, or the specified part, of this message back to me exactly as received","Let me know that you have received and understood this message","I repeat for clarity or emphasis","Repeat your last transmission, I did not hear it"],answer:0,
+ short_why:"Say my message back to me word for word.",
+ wrong_why:["","That is ACKNOWLEDGE. It asks for confirmation, not for the words back.","That is I SAY AGAIN, which is something you say about your own transmission.","That is SAY AGAIN, which asks the other station to repeat what they sent."],
+ full_explanation:"Four Appendix B words about repeating, and the exam plays them off each other:\nREAD BACK, repeat all, or the specified part, of this message back to me exactly as received.\nACKNOWLEDGE, let me know that you have received and understood this message.\nSAY AGAIN, a request for a repetition of the last transmission.\nI SAY AGAIN, I repeat for clarity or emphasis.\nThe difference is direction. READ BACK and ACKNOWLEDGE ask something of the other station about your message. SAY AGAIN asks them to repeat theirs. I SAY AGAIN is you repeating your own.\nOther Appendix B words worth knowing cold: CONFIRM, CLEARED, BREAK, MONITOR, DISREGARD, ROGER NUMBER, WORDS TWICE.",
+ ric21_ref:"RIC-21 Appendix B"}
+];
+</script>
+<script>
+(function(){
+var KEY='roca-quiz-v1', PASS=35, L='ABCD'.split('');
+var byId={}; QUESTIONS.forEach(function(q){byId[q.id]=q;});
+var el=function(i){return document.getElementById(i);};
+var S=null;
+
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function load(){try{var r=localStorage.getItem(KEY);if(!r)return null;var s=JSON.parse(r);
+  if(!s||!s.order||!s.order.length)return null;
+  s.order=s.order.filter(function(id){return byId[id];});
+  if(!s.order.length)return null;
+  if(typeof s.idx!=='number'||s.idx<0)s.idx=0;
+  if(s.idx>s.order.length)s.idx=s.order.length;
+  if(!s.answers)s.answers={};
+  return s;}catch(e){return null;}}
+function fresh(ids,mode){S={order:shuffle(ids.slice()),idx:0,answers:{},mode:mode||'all'};save();}
+
+function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function lines(t){return esc(t).split('\n').map(function(x){return '<p>'+x+'</p>';}).join('');}
+function correctCount(){var n=0;for(var k in S.answers){var q=byId[k];if(q&&S.answers[k]===q.answer)n++;}return n;}
+
+function render(){
+  if(S.idx>=S.order.length){return results();}
+  var q=byId[S.order[S.idx]], picked=S.answers[q.id];
+  el('quiz').classList.remove('hide'); el('results').classList.add('hide');
+  el('count').textContent=(S.idx+1)+' of '+S.order.length;
+  el('score').textContent=correctCount()+' correct';
+  el('prog').style.width=(S.idx/S.order.length*100)+'%';
+  el('qtext').textContent=q.q;
+  var o=el('opts'); o.innerHTML='';
+  q.options.forEach(function(txt,i){
+    var b=document.createElement('button');
+    b.className='opt'; b.type='button';
+    b.innerHTML='<span class="lt">'+L[i]+'</span>'+esc(txt);
+    b.onclick=function(){pick(q,i);};
+    o.appendChild(b);
+  });
+  el('fb').innerHTML='';
+  el('foot').classList.add('hide');
+  window.scrollTo(0,0);
+  if(typeof picked==='number')mark(q,picked);
+}
+
+function mark(q,picked){
+  var btns=el('opts').children, ok=(picked===q.answer);
+  for(var i=0;i<btns.length;i++){
+    btns[i].disabled=true; btns[i].onclick=null;
+    if(i===q.answer)btns[i].className='opt right';
+    else if(i===picked)btns[i].className='opt wrong';
+    else btns[i].className='opt dim';
+  }
+  var h='<div class="verdict '+(ok?'ok':'no')+'">'+(ok?'Correct':'Not quite')+'</div>';
+  if(ok){
+    h+='<div class="panel"><p>'+esc(q.short_why)+'</p><span class="ref">'+esc(q.ric21_ref)+'</span></div>';
+  }else{
+    h+='<div class="panel">'
+     + '<p class="lbl">The answer</p><p>'+L[q.answer]+'. '+esc(q.options[q.answer])+'</p>'
+     + '<p class="lbl">Why '+L[picked]+' is wrong</p><p class="badwhy">'+esc(q.wrong_why[picked]||'')+'</p>'
+     + '<p class="lbl">The whole idea</p>'+lines(q.full_explanation)
+     + '<span class="ref">'+esc(q.ric21_ref)+'</span></div>';
+  }
+  el('fb').innerHTML=h;
+  el('next').textContent=(S.idx+1>=S.order.length)?'See results':'Next';
+  el('foot').classList.remove('hide');
+  el('score').textContent=correctCount()+' correct';
+}
+
+function pick(q,i){
+  if(typeof S.answers[q.id]==='number')return;
+  S.answers[q.id]=i; save(); mark(q,i);
+}
+
+el('next').onclick=function(){ S.idx++; save(); render(); };
+
+function results(){
+  el('quiz').classList.add('hide'); el('foot').classList.add('hide');
+  var r=el('results'); r.classList.remove('hide');
+  var total=S.order.length, n=0, missed=[];
+  S.order.forEach(function(id){var q=byId[id];
+    if(S.answers[id]===q.answer)n++; else missed.push(q);});
+  var pass = (S.mode==='missed') ? (n===total) : (n>=PASS);
+  el('count').textContent='Finished';
+  el('score').textContent=n+' of '+total;
+  el('prog').style.width='100%';
+  var h='<div class="big '+(pass?'pass':'fail')+'">'+n+' / '+total+'</div>';
+  if(S.mode==='missed'){
+    h+='<div class="sub">Retry of the ones you missed.'+(missed.length?' '+missed.length+' still wrong.':' All of them right this time.')+'</div>';
+  }else{
+    h+='<div class="sub">'+(pass?'Pass. 35 of 50 is the 70 percent line.':'Below the line. 35 of 50 is 70 percent, so you needed '+(PASS-n)+' more.')+'</div>';
+  }
+  if(missed.length){
+    h+='<h2>Review these '+missed.length+'</h2>';
+    missed.forEach(function(q){
+      var p=S.answers[q.id];
+      h+='<div class="miss" id="m'+q.id+'">'
+       + '<p class="qt">'+esc(q.q)+'</p>'
+       + '<p class="yp">You said '+(typeof p==='number'?L[p]+'. '+esc(q.options[p]):'nothing')+'</p>'
+       + '<p class="cp">Answer '+L[q.answer]+'. '+esc(q.options[q.answer])+'</p>'
+       + '<button class="rev" data-q="'+q.id+'">Review</button>'
+       + '<div class="revbox"></div></div>';
+    });
+  }
+  h+='<div style="margin-top:22px"></div>';
+  if(missed.length)h+='<button class="btn" id="retry">Retry missed only ('+missed.length+')</button>';
+  h+='<button class="btn '+(missed.length?'ghost':'')+'" id="restart">Restart all 50</button>';
+  h+='<p class="note">Answers and explanations are from RIC-21 Issue 3, the ISED study guide for the ROC-A.</p>';
+  r.innerHTML=h;
+  window.scrollTo(0,0);
+  Array.prototype.forEach.call(r.querySelectorAll('.rev'),function(b){
+    b.onclick=function(){
+      var q=byId[b.getAttribute('data-q')], box=b.parentNode.querySelector('.revbox');
+      if(box.innerHTML){box.innerHTML='';b.textContent='Review';return;}
+      var p=S.answers[q.id], h2='<div class="panel">';
+      if(typeof p==='number')h2+='<p class="lbl">Why '+L[p]+' is wrong</p><p class="badwhy">'+esc(q.wrong_why[p]||'')+'</p>';
+      h2+='<p class="lbl">The whole idea</p>'+lines(q.full_explanation)+'<span class="ref">'+esc(q.ric21_ref)+'</span></div>';
+      box.innerHTML=h2; b.textContent='Hide';
+    };
+  });
+  var rt=el('retry');
+  if(rt)rt.onclick=function(){fresh(missed.map(function(q){return q.id;}),'missed');render();};
+  el('restart').onclick=function(){fresh(QUESTIONS.map(function(q){return q.id;}),'all');render();};
+}
+
+S=load();
+if(!S)fresh(QUESTIONS.map(function(q){return q.id;}),'all');
+render();
+})();
+</script>
+</body>
+</html>
