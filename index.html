@@ -711,8 +711,11 @@ const QUESTIONS = [
 </script>
 <script>
 (function(){
-var KEY='roca-quiz-v3', TOTAL=QUESTIONS.length, PASS=Math.ceil(TOTAL*0.7), L='ABCD'.split('');
+var KEY='roca-quiz-v3', EXAM_N=25, PASS=Math.ceil(EXAM_N*0.7), L='ABCD'.split('');
 var byId={}; QUESTIONS.forEach(function(q){byId[q.id]=q;});
+// Real exam is 25 questions. Draw a fresh random 25 from the 100-question bank
+// each attempt, so no two sittings are the same.
+function examIds(){var all=QUESTIONS.map(function(q){return q.id;});return shuffle(all.slice()).slice(0,EXAM_N);}
 var el=function(i){return document.getElementById(i);};
 var S=null;
 
@@ -849,7 +852,7 @@ function results(){
   }
   h+='<div style="margin-top:22px"></div>';
   if(missed.length)h+='<button class="btn" id="retry">Retry missed only ('+missed.length+')</button>';
-  h+='<button class="btn '+(missed.length?'ghost':'')+'" id="restart">Restart all '+TOTAL+'</button>';
+  h+='<button class="btn '+(missed.length?'ghost':'')+'" id="restart">New 25-question exam</button>';
   h+='<button class="btn ghost" id="tostart">Back to start</button>';
   h+='<p class="note">Answers and explanations are from RIC-21 Issue 3, the ISED study guide for the ROC-A. Hard mode is '+(S.hard?'on':'off')+'.</p>';
   r.innerHTML=h;
@@ -866,7 +869,7 @@ function results(){
   });
   var rt=el('retry');
   if(rt)rt.onclick=function(){fresh(missed.map(function(q){return q.id;}),'missed',S.hard);render();};
-  el('restart').onclick=function(){fresh(QUESTIONS.map(function(q){return q.id;}),'all',S.hard);render();};
+  el('restart').onclick=function(){fresh(examIds(),'all',S.hard);render();};
   el('tostart').onclick=function(){showStart();};
 }
 
@@ -884,7 +887,7 @@ el('hard').onclick=function(){
   paintToggle();
 };
 el('go').onclick=function(){
-  fresh(QUESTIONS.map(function(q){return q.id;}),'all',hardPref);
+  fresh(examIds(),'all',hardPref);
   render();
 };
 el('resume').onclick=function(){ render(); };
@@ -898,8 +901,8 @@ if(saved && (saved.idx>0 || Object.keys(saved.answers).length)){
 }else{
   S=null;
 }
-el('total').textContent=TOTAL;
-el('total2').textContent=TOTAL;
+el('total').textContent=EXAM_N;
+el('total2').textContent=EXAM_N;
 el('passline').textContent=PASS;
 showStart();
 })();
